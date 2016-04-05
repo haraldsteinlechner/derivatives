@@ -54,12 +54,12 @@ let eps (p : Lazy<IP<'c,'a>>) =
     match cache.TryGetValue (p :> obj) with
         | (true,v) -> v |> unbox
         | _ ->
-            cache.[p] <- LazyList.empty<'a>
+            //cache.[p] <- LazyList.empty<'a>
             let r = LazyList.delayed (fun () -> 
                 let current = LazyList.empty<'a>
                 let rec run set =
                     let r = p.Value.Eps set
-                    if System.Object.ReferenceEquals( r ,set) then r else  run r
+                    if System.Object.ReferenceEquals( r ,set) then r else  r
                 let r = run current
                 r 
             )
@@ -76,9 +76,10 @@ type Empty<'c,'a>() =
         member x.Eps set = set
 
 type Eps<'c,'a>(v : 'a) =
+    let eps = LazyList.ofList [v]
     interface IP<'c,'a> with
         member x.D _ = Empty() :> _
-        member x.Eps y = LazyList.ofList [v] 
+        member x.Eps y = eps
 
 type Char<'c when 'c : equality>(c : 'c) =
     interface IP<'c,'c> with
@@ -148,12 +149,12 @@ let pSeq (xs : list<IP<'c,'a>>) =
 let pString x = pSeq (!!x |> List.map (!)) ||> (fun s -> System.String(s |> List.toArray))
 let pIgnore p = p ||> (fun _ -> ())
 
-let testConc = parse !!"ab" ( !'a' <.> !'b' ) |> Seq.toList = [('a', 'b')]
-let testAlt1 = parse !!""   ( !'a' <|> !'b' ) |> Seq.toList = []
-let testAlt2 = parse !!"a"  ( !'a' <|> !'b' ) |> Seq.toList = ['a']
-let testAlt3 = parse !!"b"  ( !'a' <|> !'b' ) |> Seq.toList = ['b']
-let testE = parse !!"a" ( win 1 <.> !'a')
-let testUrdar = parse !!"abc" (pString "abc")
+//let testConc = parse !!"ab" ( !'a' <.> !'b' ) |> Seq.toList = [('a', 'b')]
+//let testAlt1 = parse !!""   ( !'a' <|> !'b' ) |> Seq.toList = []
+//let testAlt2 = parse !!"a"  ( !'a' <|> !'b' ) |> Seq.toList = ['a']
+//let testAlt3 = parse !!"b"  ( !'a' <|> !'b' ) |> Seq.toList = ['b']
+//let testE = parse !!"a" ( win 1 <.> !'a')
+//let testUrdar = parse !!"abc" (pString "abc")
 
 let mutable exp = ref Unchecked.defaultof<IP<char,char>>
 exp := alt (lazy (red (exp.Value <.> win 1) fst)) (lazy (!'a'))
