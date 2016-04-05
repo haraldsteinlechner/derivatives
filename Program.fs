@@ -44,11 +44,6 @@ type IP<'c,'a> =
     abstract member Eps : LazyList<'a> -> LazyList<'a>
     abstract member D : 'c -> IP<'c,'a>
 
-let setCmp (xs:seq<_>) (ys:seq<_>) =
-    let axs = HashSet<_>(xs)
-    let bxs = HashSet<_>(ys)
-    axs.Count = bxs.Count && xs |> Seq.forall (fun a -> bxs.Contains a) && ys |> Seq.forall (fun a -> bxs.Contains a) 
-
 let eps (p : Lazy<IP<'c,'a>>) =
     LazyList.delayed (fun () -> 
         let current = LazyList.empty<'a>
@@ -151,7 +146,7 @@ let testE = parse !!"a" ( win 1 <.> !'a')
 let testUrdar = parse !!"abc" (pString "abc")
 
 let mutable exp = ref Unchecked.defaultof<IP<char,char>>
-exp := alt (lazy (red (exp.Value <.> win 1) fst)) (lazy (!'a'))
+exp := alt (lazy (red (win 1 <.> exp.Value) snd)) (lazy (!'a'))
 
 [<EntryPoint>]
 let main argv = 
