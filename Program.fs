@@ -49,21 +49,15 @@ let setCmp (xs:seq<_>) (ys:seq<_>) =
     let bxs = HashSet<_>(ys)
     axs.Count = bxs.Count && xs |> Seq.forall (fun a -> bxs.Contains a) && ys |> Seq.forall (fun a -> bxs.Contains a) 
 
-let cache = Dictionary<obj,obj>()
 let eps (p : Lazy<IP<'c,'a>>) =
-    match cache.TryGetValue (p :> obj) with
-        | (true,v) -> v |> unbox
-        | _ ->
-            //cache.[p] <- LazyList.empty<'a>
-            let r = LazyList.delayed (fun () -> 
-                let current = LazyList.empty<'a>
-                let rec run set =
-                    let r = p.Value.Eps set
-                    if System.Object.ReferenceEquals( r ,set) then r else  r
-                let r = run current
-                r 
-            )
-            r
+    LazyList.delayed (fun () -> 
+        let current = LazyList.empty<'a>
+        let rec run set =
+            let r = p.Value.Eps set
+            if System.Object.ReferenceEquals( r ,set ) then r else  r
+        let r = run current
+        r 
+    )
 
 
 let d<'c,'a> : Lazy<IP<'c,'a>> -> 'c -> IP<'c,'a> =
@@ -149,12 +143,12 @@ let pSeq (xs : list<IP<'c,'a>>) =
 let pString x = pSeq (!!x |> List.map (!)) ||> (fun s -> System.String(s |> List.toArray))
 let pIgnore p = p ||> (fun _ -> ())
 
-//let testConc = parse !!"ab" ( !'a' <.> !'b' ) |> Seq.toList = [('a', 'b')]
-//let testAlt1 = parse !!""   ( !'a' <|> !'b' ) |> Seq.toList = []
-//let testAlt2 = parse !!"a"  ( !'a' <|> !'b' ) |> Seq.toList = ['a']
-//let testAlt3 = parse !!"b"  ( !'a' <|> !'b' ) |> Seq.toList = ['b']
-//let testE = parse !!"a" ( win 1 <.> !'a')
-//let testUrdar = parse !!"abc" (pString "abc")
+let testConc = parse !!"ab" ( !'a' <.> !'b' ) |> Seq.toList = [('a', 'b')]
+let testAlt1 = parse !!""   ( !'a' <|> !'b' ) |> Seq.toList = []
+let testAlt2 = parse !!"a"  ( !'a' <|> !'b' ) |> Seq.toList = ['a']
+let testAlt3 = parse !!"b"  ( !'a' <|> !'b' ) |> Seq.toList = ['b']
+let testE = parse !!"a" ( win 1 <.> !'a')
+let testUrdar = parse !!"abc" (pString "abc")
 
 let mutable exp = ref Unchecked.defaultof<IP<char,char>>
 exp := alt (lazy (red (exp.Value <.> win 1) fst)) (lazy (!'a'))
@@ -163,6 +157,6 @@ exp := alt (lazy (red (exp.Value <.> win 1) fst)) (lazy (!'a'))
 let main argv = 
     parse !!"ab" ( !'a' <.> !'b' ) |> Seq.toList |> printfn "%A"
 //    printfn "%A" (LazyList.take 1 a |> LazyList.toArray)
-//    let a = parse !!"a" exp.Value
-//    printfn "%A" (LazyList.take 1 a |> LazyList.toArray)
+    let a = parse !!"a" exp.Value
+    printfn "%A" (LazyList.take 1 a |> LazyList.toArray)
     0 
